@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>MC Simple Version</title>
+        <meta charset="utf-8">
+        
+        <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+        <style>
+            body {
+                font-family: Monospace;
+                background-color: #f0f0f0;
+                margin: 0px;
+                overflow: hidden;
+            }
+            #aa{
+                font-size: 10px;
+                position: relative;
+            }
+
+            #oldie { background-color: #ddd !important }
+        </style>
+    </head>
+    <body>
+    <div>
+        <a id="aa">CUBE</a>
+        <img src="textures/MC/box.png">
+        <a id="aa">SPHERE</a>
+        <img src="textures/MC/sphere.png">
+        <a id="aa">CUBOID</a>
+        <img src="textures/MC/cube.png">
+        <a id="aa">CYLINDER</a>
+        <img src="textures/MC/cylinder.png">
+    </div>
+        <script src="three.js/build/three.js"></script>
+        <script src="three.js/examples/js/Detector.js"></script>
+        <script src="three.js/examples/js/controls/OrbitControls.js"></script>
+        <script src="jQuery/jquery-3.2.1.min.js"></script>
+        <script>
+            if ( ! Detector.webgl ) Detector.addGetWebGLMessage();
+
+            var container;
+            var camera, scene, renderer;
+            var plane, cube;
+            var mouse, raycaster, isShiftDown = false;
+            var control;
+
+            var rollOverMesh, rollOverMaterial;
+            var cubeGeo, cubeMaterial;
+
+            var objects = [];
+
+            init();
+
+            function init(){
+
+                container = document.createElement( 'div' );
+                document.body.appendChild( container );
+
+                var info = document.createElement( 'div' );
+                info.style.position = 'absolute';
+                info.style.top = '10px';
+                info.style.width = '100%';
+                info.style.textAlign = 'center';
+                info.innerHTML = 'Simple MC<br><strong>shift + click</strong>：Delete the geometry ( Enable mouse to move camera )<br>' +
+                '<button class="btn1" onclick="method1()">CUBE</button><button class="btn2" onclick="method2()">SPHERE</button>' +
+                '<button class="btn3" onclick="method3()">CUBOID</button><button class="btn4" onclick="method4()">CYLINDER</button>';
+                container.appendChild( info );
+
+                camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 1, 10000 );
+                camera.position.set( 500, 800, 1300 );
+                camera.lookAt( new THREE.Vector3() );
+
+                scene = new THREE.Scene();
+                var size = 500, step = 50;
+                var geometry = new THREE.Geometry();
+                for ( var i = - size; i <= size; i += step ) {
+                    geometry.vertices.push( new THREE.Vector3( - size, 0, i ) );
+                    geometry.vertices.push( new THREE.Vector3(   size, 0, i ) );
+                    geometry.vertices.push( new THREE.Vector3( i, 0, - size ) );
+                    geometry.vertices.push( new THREE.Vector3( i, 0,   size ) );
+                }
+                var material = new THREE.LineBasicMaterial( { color: 0x000000, opacity: 0.2, transparent: true } );
+                var line = new THREE.LineSegments( geometry, material );
+                scene.add( line );
+                raycaster = new THREE.Raycaster();
+                mouse = new THREE.Vector2();
+                var geometry = new THREE.PlaneBufferGeometry( 1000, 1000 );
+                geometry.rotateX( - Math.PI / 2 );
+                plane = new THREE.Mesh( geometry, new THREE.MeshBasicMaterial( { visible: false } ) );
+                scene.add( plane );
+                objects.push( plane );
+                var ambientLight = new THREE.AmbientLight( 0x606060 );
+                scene.add( ambientLight );
+                var directionalLight = new THREE.DirectionalLight( 0xffffff );
+                directionalLight.position.set( 1, 0.75, 0.5 ).normalize();
+                scene.add( directionalLight );
+
+                renderer = new THREE.WebGLRenderer( { antialias: true } );
+                renderer.setClearColor( 0xf0f0f0 );
+                renderer.setPixelRatio( window.devicePixelRatio );
+                renderer.setSize( window.innerWidth, window.innerHeight );
+
+                control = new THREE.OrbitControls( camera, renderer.domElement );
+                control.target.set(0,1,0);
+                control.update();
+
+                container.appendChild( renderer.domElement );
+                document.addEventListener( 'mousemove', onDocumentMouseMove, false );
+                document.addEventListener( 'mousedown', onDocumentMouseDown, false );
+                document.addEventListener( 'keydown', onDocumentKeyDown, false );
+                document.addEventListener( 'keyup', onDocumentKeyUp, false );
+                window.addEventListener( 'resize', onWindowResize, false );
+            }
+
+            function method1(){
+                methodfollow1();
+
+                cubeGeo = new THREE.BoxGeometry( 50, 50, 50 );
+                cubeMaterial = new THREE.MeshLambertMaterial( { color: 0xfeb74c, map: new THREE.TextureLoader().load( "textures/MC/square-outline-textured.png" ) } );
+            }
+            function method2(){
+                methodfollow2();
+
+                cubeGeo = new THREE.SphereGeometry( 50, 10, 10 );
+                cubeMaterial = new THREE.MeshLambertMaterial( { color: 0x4D662D } );
+            }
+            function method3(){
+                methodfollow3();
+                cubeGeo = new THREE.CubeGeometry( 50, 100, 50 );
+                cubeMaterial = new THREE.MeshLambertMaterial( { color: 0x4D662D, map: new THREE.TextureLoader().load( "textures/MC/square-outline-textured.png" ) } );
+            }
+            function method4(){
+                methodfollow4();
+                cubeGeo = new THREE.CylinderBufferGeometry( 25,25, 100, 50 ,50);
+                cubeMaterial = new THREE.MeshLambertMaterial( { color: 0x4D662D, map: new THREE.TextureLoader().load( "textures/MC/square-outline-textured.png" ) } );
+            }
+            function method5(){
+                window.open("newwindows.html","_blank","resizable=yes,scrollbars=yes,titlebar=yes,windth=800,height=800");
+            }
+
+            function methodfollow1(){
+                cleanFade();
+                rollOverGeo = new THREE.BoxGeometry( 50, 50, 50 );
+                rollOverMaterial = new THREE.MeshBasicMaterial( { color: 0xff0000, opacity: 0.5, transparent: true } );
+                rollOverMesh = new THREE.Mesh( rollOverGeo, rollOverMaterial );
+                rollOverMesh.name = "fade";
+                scene.add( rollOverMesh );
+            }
+            function methodfollow2(){
+                cleanFade();
+                rollOverGeo = new THREE.SphereGeometry( 50, 10, 10 );
+                rollOverMaterial = new THREE.MeshBasicMaterial( { color: 0xff0000, opacity: 0.5, transparent: true } );
+                rollOverMesh = new THREE.Mesh( rollOverGeo, rollOverMaterial );
+                rollOverMesh.name = "fade";
+                scene.add( rollOverMesh );
+            }
+            function methodfollow3(){
+                cleanFade();
+                rollOverGeo = new THREE.CubeGeometry( 50, 100, 50 );
+                rollOverMaterial = new THREE.MeshBasicMaterial( { color: 0xff0000, opacity: 0.5, transparent: true } );
+                rollOverMesh = new THREE.Mesh( rollOverGeo, rollOverMaterial );
+                rollOverMesh.name = "fade";
+                scene.add( rollOverMesh );
+            }
+            function methodfollow4(){
+                cleanFade();
+                rollOverGeo = new THREE.CylinderGeometry( 25,25 ,100, 50,50 );
+                rollOverMaterial = new THREE.MeshBasicMaterial( { color: 0xff0000, opacity: 0.5, transparent: true } );
+                rollOverMesh = new THREE.Mesh( rollOverGeo, rollOverMaterial );
+                rollOverMesh.name = "fade";
+                scene.add( rollOverMesh );
+            }
+
+
+            function onWindowResize() {
+
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+
+                renderer.setSize( window.innerWidth, window.innerHeight );
+
+            }
+
+            function onDocumentMouseMove( event ) {
+                event.preventDefault();
+                mouse.set( ( event.clientX / window.innerWidth ) * 2 - 1, - ( (event.clientY) / window.innerHeight ) * 2 + 1 );
+                raycaster.setFromCamera( mouse, camera );
+                var intersects = raycaster.intersectObjects( objects );
+                if ( intersects.length > 0 ) {
+                    var intersect = intersects[ 0 ];
+                    rollOverMesh.position.copy( intersect.point ).add( intersect.face.normal );
+                    rollOverMesh.position.divideScalar( 50 ).floor().multiplyScalar( 50 ).addScalar( 25 );
+                }
+
+            }
+            function onDocumentMouseDown( event ) {
+                event.preventDefault();
+                mouse.set( ( event.clientX / window.innerWidth ) * 2 - 1, - ( event.clientY / window.innerHeight ) * 2 + 1 );
+                raycaster.setFromCamera( mouse, camera );
+                var intersects = raycaster.intersectObjects( objects );
+                if ( intersects.length > 0 ) {
+                    var intersect = intersects[ 0 ];
+
+                    if ( isShiftDown ) {
+                        if ( intersect.object != plane ) {
+                            scene.remove( intersect.object );
+                            objects.splice( objects.indexOf( intersect.object ), 1 );
+                        }
+
+                    } else {
+                        var voxel = new THREE.Mesh( cubeGeo, cubeMaterial );
+                        voxel.position.copy( intersect.point ).add( intersect.face.normal );
+                        voxel.position.divideScalar( 50 ).floor().multiplyScalar( 50 ).addScalar( 25 );
+                        scene.add( voxel );
+                        objects.push( voxel );
+                    }
+
+                }
+            }
+
+            function onDocumentKeyDown( event ) {
+                switch( event.keyCode ) {
+                    case 16: isShiftDown = true; break;
+                            
+                }
+            }
+            function onDocumentKeyUp( event ) {
+                switch ( event.keyCode ) {
+                    case 16: isShiftDown = false; break;
+
+                }
+            }
+            animate();
+            function animate() {
+
+                    requestAnimationFrame(animate);
+                    render();
+            }
+
+            function render() {
+
+                renderer.render( scene, camera );
+
+            }
+
+            function cleanFade(){
+                for(var o of scene.children){
+                    if(o.name == "fade")
+                        scene.remove(o);
+                }
+            }
+
+        </script>
+    </body>
+</html>
+
+源代码
